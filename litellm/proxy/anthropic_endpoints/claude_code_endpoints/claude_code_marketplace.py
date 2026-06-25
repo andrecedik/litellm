@@ -12,6 +12,7 @@ Endpoints:
 /claude-code/plugins/{name}    - GET  - Get plugin details
 /claude-code/plugins/{name}/enable  - POST - Enable a plugin
 /claude-code/plugins/{name}/disable - POST - Disable a plugin
+/claude-code/plugins/{name}    - PATCH  - Update a plugin (admin only)
 /claude-code/plugins/{name}    - DELETE - Delete a plugin
 """
 
@@ -27,10 +28,12 @@ from litellm._logging import verbose_proxy_logger
 from litellm.proxy._types import CommonProxyErrors, UserAPIKeyAuth
 from litellm.proxy.auth.user_api_key_auth import user_api_key_auth
 from litellm.repositories.table_repositories import ClaudeCodePluginRepository
+from litellm.proxy._types import LitellmUserRoles
 from litellm.types.proxy.claude_code_endpoints import (
     ListPluginsResponse,
     PluginListItem,
     RegisterPluginRequest,
+    UpdatePluginRequest,
 )
 
 router = APIRouter()
@@ -585,4 +588,101 @@ async def delete_plugin(
         raise HTTPException(
             status_code=500,
             detail={"error": str(e)},
+        )
+
+
+@router.patch(
+    "/claude-code/plugins/{plugin_name}",
+    tags=["Claude Code Marketplace"],
+    dependencies=[Depends(user_api_key_auth)],
+)
+async def update_plugin(
+    plugin_name: str,
+    request: UpdatePluginRequest,
+    user_api_key_dict: UserAPIKeyAuth = Depends(user_api_key_auth),
+):
+    """
+    Partially update an existing plugin.
+
+    Only the provided fields are changed; omitted fields retain their current values.
+    Plugin name is immutable. created_by and created_at are never modified.
+
+    Parameters:
+        - plugin_name: The name of the plugin to update
+
+    Returns:
+        Update status and plugin information.
+    """
+    if user_api_key_dict.user_role != LitellmUserRoles.PROXY_ADMIN:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "Admin access required to update plugins"},
+        )
+
+    try:
+        prisma_client = await _get_prisma_client()
+
+        plugin = await ClaudeCodePluginRepository(prisma_client).table.find_unique(
+            where={"name": plugin_name}
+        )
+        if not plugin:
+            raise HTTPException(
+                status_code=404,
+                detail={"error": f"Plugin '{plugin_name}' not found"},
+            )
+
+        manifest = json.loads(plugin.manifest_json) if plugin.manifest_json else {}
+
+        if request.source is not None:
+            _validate_plugin_source(request.source)
+            manifest["source"] = request.source
+        if request.version is not None:
+            manifest["version"] = request.version
+        if request.description is not None:
+            manifest["description"] = request.description
+        if request.author is not None:
+            manifest["author"] = request.author.model_dump(exclude_none=True)
+        if request.homepage is not None:
+            manifest["homepage"] = request.homepage
+        if request.keywords is not None:
+            manifest["keywords"] = request.keywords
+        if request.category is not None:
+            manifest["category"] = request.category
+        if request.domain is not None:
+            manifest["domain"] = request.domain
+        if request.namespace is not None:
+            manifest["namespace"] = request.namespace
+
+        updated = await ClaudeCodePluginRepository(prisma_client).table.update(
+            where={"name": plugin_name},
+            data={
+                "version": request.version if request.version is not None else plugin.version,
+                "description": request.description if request.description is not None else plugin.description,
+                "manifest_json": json.dumps(manifest),
+                "updated_at": datetime.now(timezone.utc),
+            },
+        )
+
+        verbose_proxy_logger.info(f"Plugin {plugin_name} updated successfully")
+
+        return {
+            "status": "success",
+            "action": "updated",
+            "plugin": {
+                "id": updated.id,
+                "name": updated.name,
+                "version": updated.version,
+                "description": updated.description,
+                "source": manifest.get("source", {}),
+                "enabled": updated.enabled,
+            },
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        verbose_proxy_logger.exception(f"Error updating plugin: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": f"Update failed: {str(e)}"},
         )

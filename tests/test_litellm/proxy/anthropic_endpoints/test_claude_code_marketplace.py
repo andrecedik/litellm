@@ -11,9 +11,10 @@ from unittest.mock import AsyncMock, MagicMock
 import litellm
 from litellm.proxy._types import UserAPIKeyAuth
 from litellm.proxy.proxy_server import LitellmUserRoles
-from litellm.types.proxy.claude_code_endpoints import RegisterPluginRequest
+from litellm.types.proxy.claude_code_endpoints import RegisterPluginRequest, UpdatePluginRequest
 from litellm.proxy.anthropic_endpoints.claude_code_endpoints.claude_code_marketplace import (
     register_plugin,
+    update_plugin,
 )
 
 
@@ -211,3 +212,113 @@ async def test_register_plugin_unknown_source_type():
 
     assert exc_info.value.status_code == 400
     assert "git-subdir" in exc_info.value.detail["error"]
+
+
+_GITHUB_SOURCE = {"source": "github", "repo": "org/my-plugin"}
+
+_NON_ADMIN = UserAPIKeyAuth(
+    user_role=LitellmUserRoles.INTERNAL_USER,
+    api_key="sk-non-admin",
+    user_id="non-admin-user",
+)
+
+
+async def _register(name: str, **kwargs) -> None:
+    await register_plugin(
+        request=RegisterPluginRequest(name=name, source=_GITHUB_SOURCE, **kwargs),
+        user_api_key_dict=_USER,
+    )
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_description_and_version():
+    """PATCH with description and version updates those fields; created_by unchanged."""
+    await _register("edit-plugin", version="1.0.0", description="original")
+
+    response = await update_plugin(
+        plugin_name="edit-plugin",
+        request=UpdatePluginRequest(version="2.0.0", description="updated"),
+        user_api_key_dict=_USER,
+    )
+
+    assert response["status"] == "success"
+    assert response["action"] == "updated"
+    assert response["plugin"]["version"] == "2.0.0"
+    assert response["plugin"]["description"] == "updated"
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_source_only():
+    """PATCH with only source updates the source; other fields preserved."""
+    await _register("source-only-plugin", version="1.0.0", description="keep me")
+
+    new_source = {"source": "url", "url": "https://github.com/org/new.git"}
+    response = await update_plugin(
+        plugin_name="source-only-plugin",
+        request=UpdatePluginRequest(source=new_source),
+        user_api_key_dict=_USER,
+    )
+
+    assert response["status"] == "success"
+    assert response["plugin"]["source"] == new_source
+    assert response["plugin"]["description"] == "keep me"
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_empty_body_noop():
+    """PATCH with all fields None is a no-op; existing values preserved."""
+    await _register("noop-plugin", version="1.0.0", description="unchanged")
+
+    response = await update_plugin(
+        plugin_name="noop-plugin",
+        request=UpdatePluginRequest(),
+        user_api_key_dict=_USER,
+    )
+
+    assert response["status"] == "success"
+    assert response["plugin"]["version"] == "1.0.0"
+    assert response["plugin"]["description"] == "unchanged"
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_not_found():
+    """PATCH on an unknown plugin name returns 404."""
+    with pytest.raises(HTTPException) as exc_info:
+        await update_plugin(
+            plugin_name="nonexistent-plugin",
+            request=UpdatePluginRequest(description="x"),
+            user_api_key_dict=_USER,
+        )
+
+    assert exc_info.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_invalid_source():
+    """PATCH with a github source missing repo field returns 400."""
+    await _register("bad-source-plugin")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_plugin(
+            plugin_name="bad-source-plugin",
+            request=UpdatePluginRequest(source={"source": "github"}),
+            user_api_key_dict=_USER,
+        )
+
+    assert exc_info.value.status_code == 400
+    assert "repo" in exc_info.value.detail["error"]
+
+
+@pytest.mark.asyncio
+async def test_update_plugin_non_admin_forbidden():
+    """PATCH by a non-admin user returns 403."""
+    await _register("admin-only-plugin")
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_plugin(
+            plugin_name="admin-only-plugin",
+            request=UpdatePluginRequest(description="sneaky"),
+            user_api_key_dict=_NON_ADMIN,
+        )
+
+    assert exc_info.value.status_code == 403

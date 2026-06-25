@@ -57,6 +57,24 @@ class RegisterPluginRequest(BaseModel):
     )
 
 
+class UpdatePluginRequest(BaseModel):
+    """
+    Request body for partially updating an existing plugin.
+    All fields are optional; omitted fields are left unchanged.
+    Plugin name is immutable and supplied as a URL path parameter.
+    """
+
+    source: Optional[Dict[str, str]] = Field(None, description="Git source reference")
+    version: Optional[str] = Field(None, description="Semantic version")
+    description: Optional[str] = Field(None, description="Plugin description")
+    author: Optional[PluginAuthor] = Field(None, description="Plugin author")
+    homepage: Optional[str] = Field(None, description="Plugin homepage URL")
+    keywords: Optional[List[str]] = Field(None, description="Search keywords")
+    category: Optional[str] = Field(None, description="Plugin category")
+    domain: Optional[str] = Field(None, description="Skill domain")
+    namespace: Optional[str] = Field(None, description="Skill namespace within domain")
+
+
 class PluginResponse(BaseModel):
     """Plugin information in API responses."""
 
