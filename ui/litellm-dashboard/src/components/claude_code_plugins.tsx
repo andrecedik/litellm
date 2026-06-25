@@ -3,6 +3,7 @@ import { Button } from "@tremor/react";
 import { Modal } from "antd";
 import { getClaudeCodePluginsList, deleteClaudeCodePlugin } from "./networking";
 import AddPluginForm from "./claude_code_plugins/add_plugin_form";
+import EditPluginForm from "./claude_code_plugins/edit_plugin_form";
 import PluginTable from "./claude_code_plugins/plugin_table";
 import SkillDetail from "./claude_code_plugins/skill_detail";
 import { isAdminRole } from "@/utils/roles";
@@ -23,6 +24,8 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
     name: string;
     displayName: string;
   } | null>(null);
+  const [pluginToEdit, setPluginToEdit] = useState<Plugin | null>(null);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<Plugin | null>(null);
 
   const isAdmin = userRole ? isAdminRole(userRole) : false;
@@ -47,6 +50,16 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
 
   const handleDeleteClick = (pluginName: string, displayName: string) => {
     setPluginToDelete({ name: pluginName, displayName });
+  };
+
+  const handleEditClick = (plugin: Plugin) => {
+    setPluginToEdit(plugin);
+    setIsEditModalVisible(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditModalVisible(false);
+    setPluginToEdit(null);
   };
 
   const handleDeleteConfirm = async () => {
@@ -75,6 +88,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
           isAdmin={isAdmin}
           accessToken={accessToken}
           onPublishClick={fetchPlugins}
+          onEditClick={() => handleEditClick(selectedSkill)}
         />
       ) : (
         <>
@@ -95,6 +109,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
             pluginsList={pluginsList}
             isLoading={isLoading}
             onDeleteClick={handleDeleteClick}
+            onEditClick={handleEditClick}
             accessToken={accessToken}
             isAdmin={isAdmin}
             onPluginClick={(id) => {
@@ -108,6 +123,14 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
       <AddPluginForm
         visible={isAddModalVisible}
         onClose={() => setIsAddModalVisible(false)}
+        accessToken={accessToken}
+        onSuccess={fetchPlugins}
+      />
+
+      <EditPluginForm
+        visible={isEditModalVisible}
+        plugin={pluginToEdit}
+        onClose={handleEditClose}
         accessToken={accessToken}
         onSuccess={fetchPlugins}
       />

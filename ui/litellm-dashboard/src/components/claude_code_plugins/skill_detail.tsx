@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ArrowLeftOutlined, CopyOutlined, CheckOutlined, LinkOutlined } from "@ant-design/icons";
+import { Button } from "@tremor/react";
 import { formatInstallCommand } from "./helpers";
 import { Plugin } from "./types";
 
@@ -9,9 +10,10 @@ interface SkillDetailProps {
   isAdmin?: boolean;
   accessToken?: string | null;
   onPublishClick?: () => void;
+  onEditClick?: () => void;
 }
 
-const SkillDetail: React.FC<SkillDetailProps> = ({ skill, onBack }) => {
+const SkillDetail: React.FC<SkillDetailProps> = ({ skill, onBack, isAdmin, onEditClick }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -47,21 +49,27 @@ const SkillDetail: React.FC<SkillDetailProps> = ({ skill, onBack }) => {
 
   return (
     <div style={{ padding: "24px 32px 24px 0" }}>
-      {/* Back link */}
-      <div
-        onClick={onBack}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          color: "#5f6368",
-          cursor: "pointer",
-          fontSize: 14,
-          marginBottom: 24,
-        }}
-      >
-        <ArrowLeftOutlined style={{ fontSize: 11 }} />
-        <span>Skills</span>
+      {/* Back link + admin actions */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+        <div
+          onClick={onBack}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            color: "#5f6368",
+            cursor: "pointer",
+            fontSize: 14,
+          }}
+        >
+          <ArrowLeftOutlined style={{ fontSize: 11 }} />
+          <span>Skills</span>
+        </div>
+        {isAdmin && onEditClick && (
+          <Button size="xs" variant="secondary" onClick={onEditClick}>
+            Edit
+          </Button>
+        )}
       </div>
 
       {/* Header */}

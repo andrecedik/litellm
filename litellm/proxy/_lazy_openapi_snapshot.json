@@ -4649,6 +4649,127 @@
           "title": "RegisterPluginRequest",
           "type": "object"
         },
+        "UpdatePluginRequest": {
+          "description": "Request body for partially updating an existing plugin.\nAll fields are optional; omitted fields are left unchanged.\nPlugin name is immutable and supplied as a URL path parameter.",
+          "properties": {
+            "author": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PluginAuthor"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Plugin author"
+            },
+            "category": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Plugin category"
+            },
+            "description": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Plugin description"
+            },
+            "domain": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Skill domain"
+            },
+            "homepage": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Plugin homepage URL"
+            },
+            "keywords": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Search keywords"
+            },
+            "namespace": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Skill namespace within domain"
+            },
+            "source": {
+              "anyOf": [
+                {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Git source reference"
+            },
+            "version": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Semantic version"
+            }
+          },
+          "title": "UpdatePluginRequest",
+          "type": "object"
+        },
         "ValidationError": {
           "properties": {
             "loc": {
@@ -4882,6 +5003,60 @@
             }
           ],
           "summary": "Get Plugin",
+          "tags": [
+            "claude_code_marketplace"
+          ]
+        },
+        "patch": {
+          "description": "Partially update an existing plugin.\n\nOnly the provided fields are changed; omitted fields retain their current values.\nPlugin name is immutable. created_by and created_at are never modified.\n\nParameters:\n    - plugin_name: The name of the plugin to update\n\nReturns:\n    Update status and plugin information.",
+          "operationId": "update_plugin_claude_code_plugins__plugin_name__patch",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "plugin_name",
+              "required": true,
+              "schema": {
+                "title": "Plugin Name",
+                "type": "string"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatePluginRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              },
+              "description": "Successful Response"
+            },
+            "422": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              },
+              "description": "Validation Error"
+            }
+          },
+          "security": [
+            {
+              "APIKeyHeader": []
+            }
+          ],
+          "summary": "Update Plugin",
           "tags": [
             "claude_code_marketplace"
           ]

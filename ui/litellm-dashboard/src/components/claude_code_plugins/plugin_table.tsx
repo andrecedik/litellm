@@ -1,4 +1,4 @@
-import { CopyOutlined } from "@ant-design/icons";
+import { CopyOutlined, EditOutlined } from "@ant-design/icons";
 import { ChevronDownIcon, ChevronUpIcon, SwitchVerticalIcon, TrashIcon } from "@heroicons/react/outline";
 import {
   ColumnDef,
@@ -19,6 +19,7 @@ interface PluginTableProps {
   pluginsList: Plugin[];
   isLoading: boolean;
   onDeleteClick: (pluginName: string, displayName: string) => void;
+  onEditClick: (plugin: Plugin) => void;
   accessToken: string | null;
   isAdmin: boolean;
   onPluginClick: (pluginId: string) => void;
@@ -28,6 +29,7 @@ const PluginTable: React.FC<PluginTableProps> = ({
   pluginsList,
   isLoading,
   onDeleteClick,
+  onEditClick,
   accessToken,
   isAdmin,
   onPluginClick,
@@ -152,6 +154,19 @@ const PluginTable: React.FC<PluginTableProps> = ({
 
               return (
                 <div className="flex items-center gap-1">
+                  <Tooltip title="Edit skill">
+                    <Button
+                      size="xs"
+                      variant="light"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditClick(plugin);
+                      }}
+                      className="text-gray-500 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <EditOutlined />
+                    </Button>
+                  </Tooltip>
                   <Tooltip title="Delete skill">
                     <Button
                       size="xs"
