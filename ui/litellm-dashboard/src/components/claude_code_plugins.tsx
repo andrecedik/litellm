@@ -25,7 +25,8 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
     displayName: string;
   } | null>(null);
   const [pluginToEdit, setPluginToEdit] = useState<Plugin | null>(null);
-  const [selectedSkill, setSelectedSkill] = useState<Plugin | null>(null);
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
+  const selectedSkill = selectedSkillId ? (pluginsList.find((p) => p.id === selectedSkillId) ?? null) : null;
 
   const isAdmin = userRole ? isAdminRole(userRole) : false;
 
@@ -81,7 +82,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
       {selectedSkill ? (
         <SkillDetail
           skill={selectedSkill}
-          onBack={() => setSelectedSkill(null)}
+          onBack={() => setSelectedSkillId(null)}
           isAdmin={isAdmin}
           accessToken={accessToken}
           onPublishClick={fetchPlugins}
@@ -109,10 +110,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
             onEditClick={handleEditClick}
             accessToken={accessToken}
             isAdmin={isAdmin}
-            onPluginClick={(id) => {
-              const skill = pluginsList.find((p) => p.id === id);
-              if (skill) setSelectedSkill(skill);
-            }}
+            onPluginClick={(id) => setSelectedSkillId(id)}
           />
         </>
       )}
