@@ -98,9 +98,11 @@ const EditPluginForm: React.FC<EditPluginFormProps> = ({ visible, plugin, onClos
 
       if (values.version) updateData.version = values.version.trim();
       if (values.description) updateData.description = values.description.trim();
-      if (values.authorName || values.authorEmail) {
-        updateData.author = { name: values.authorName?.trim() ?? "" };
-        if (values.authorEmail) updateData.author.email = values.authorEmail.trim();
+      const authorName = values.authorName?.trim();
+      if (authorName) {
+        updateData.author = { name: authorName };
+        const authorEmail = values.authorEmail?.trim();
+        if (authorEmail) updateData.author.email = authorEmail;
       }
       if (values.homepage) updateData.homepage = values.homepage.trim();
       if (values.category) updateData.category = values.category;
@@ -137,12 +139,10 @@ const EditPluginForm: React.FC<EditPluginFormProps> = ({ visible, plugin, onClos
   return (
     <Modal title="Edit Skill" open={visible} onCancel={handleCancel} footer={null} width={700} className="top-8">
       <Form form={form} layout="vertical" onFinish={handleSubmit} className="mt-4">
-        {/* Name — disabled, immutable */}
         <Form.Item label="Skill Name" name="name" tooltip="Plugin name cannot be changed after registration">
           <Input disabled className="rounded-lg" />
         </Form.Item>
 
-        {/* Source type selector */}
         <Form.Item label="Source Type" name="sourceType" rules={[{ required: true }]}>
           <Select onChange={handleSourceTypeChange} className="rounded-lg">
             <Option value="github">GitHub</Option>
@@ -184,7 +184,6 @@ const EditPluginForm: React.FC<EditPluginFormProps> = ({ visible, plugin, onClos
           </Form.Item>
         )}
 
-        {/* Domain and Namespace */}
         <div className="flex gap-4">
           <Form.Item label="Domain (Optional)" name="domain" tooltip="Top-level grouping in the Skill Hub" className="flex-1">
             <Input placeholder="Productivity" className="rounded-lg" />

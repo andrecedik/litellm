@@ -25,7 +25,6 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
     displayName: string;
   } | null>(null);
   const [pluginToEdit, setPluginToEdit] = useState<Plugin | null>(null);
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedSkill, setSelectedSkill] = useState<Plugin | null>(null);
 
   const isAdmin = userRole ? isAdminRole(userRole) : false;
@@ -54,11 +53,9 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
 
   const handleEditClick = (plugin: Plugin) => {
     setPluginToEdit(plugin);
-    setIsEditModalVisible(true);
   };
 
   const handleEditClose = () => {
-    setIsEditModalVisible(false);
     setPluginToEdit(null);
   };
 
@@ -88,7 +85,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
           isAdmin={isAdmin}
           accessToken={accessToken}
           onPublishClick={fetchPlugins}
-          onEditClick={() => handleEditClick(selectedSkill)}
+          onEditClick={() => handleEditClick(selectedSkill!)}
         />
       ) : (
         <>
@@ -128,7 +125,7 @@ const ClaudeCodePluginsPanel: React.FC<ClaudeCodePluginsPanelProps> = ({ accessT
       />
 
       <EditPluginForm
-        visible={isEditModalVisible}
+        visible={pluginToEdit !== null}
         plugin={pluginToEdit}
         onClose={handleEditClose}
         accessToken={accessToken}
