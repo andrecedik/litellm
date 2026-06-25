@@ -7547,6 +7547,51 @@ export const deleteClaudeCodePlugin = async (accessToken: string, pluginName: st
   }
 };
 
+export const updateClaudeCodePlugin = async (
+  accessToken: string,
+  pluginName: string,
+  updateData: {
+    source?: { source: string; repo?: string; url?: string; path?: string };
+    version?: string;
+    description?: string;
+    author?: { name: string; email?: string };
+    homepage?: string;
+    keywords?: string[];
+    category?: string;
+    domain?: string;
+    namespace?: string;
+  },
+) => {
+  try {
+    const proxyBaseUrl = getProxyBaseUrl();
+    const url = proxyBaseUrl
+      ? `${proxyBaseUrl}/claude-code/plugins/${pluginName}`
+      : `/claude-code/plugins/${pluginName}`;
+
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        [globalLitellmHeaderName]: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updateData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      const errorMessage = deriveErrorMessage(JSON.parse(errorData));
+      handleError(errorMessage);
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Failed to update plugin "${pluginName}":`, error);
+    throw error;
+  }
+};
+
 // Compliance check types and functions
 
 export interface ComplianceCheckResult {
